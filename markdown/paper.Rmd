@@ -1,0 +1,355 @@
+---
+title: "The Fast and the Furious: Tracking the Effect of the Tomoa Skip on Speed Climbing"
+author: "Caleb Chou and Andee Kaplan"
+output:
+  bookdown::pdf_document2: 
+    toc: false
+bibliography: refs.bib
+header-includes:
+    - \usepackage{setspace}\doublespacing
+---
+```{r include=FALSE}
+library(kableExtra)
+library(tidyverse)
+load("../../data/mTimes_skip.Rdata")
+load("../../data/wTimes_skip.Rdata")
+load("../../data/events.Rdata")
+
+theme_set(theme_bw(base_family = "serif"))
+
+```
+
+## Introduction
+
+Rock climbing, a formerly niche sport, has grown rapidly since it's emergence in the late 19th century. From the early days of alpine expeditions to the Olympic games, the sport of climbing has shifted and evolved as technologies and techniques are built upon and refined by the rapid influx of climbers continuously picking up the sport. What was once a pursuit of few has now become a pastime for millions, a unique blend of athleticism, mental-fortitude, and strategy unlike any other.
+
+Competitive climbing can be broken up into three main disciplines: lead climbing, bouldering, and speed climbing. Governed by the International Federation of Sport Climbing (IFSC), climbing competitions are held for each distinct discipline. Lead climbing is a style of climbing in which climbers scale a climbing wall using a set of artificial holds. These climbing walls are generally long and require climbers to tie into a rope which they then use to clip into quickdraws drilled into the wall. On the other hand, bouldering involves tackling short yet challenging sequences of holds on smaller walls. Due to the shorter height, boulderers use shock-absorbing mats to cushion their falls instead of relying on ropes. Although lead climbing and bouldering are completely different disciplines of climbing, many of the same fundamental techniques, physical strengths, and problem-solving abilities are needed to excel in both styles. 
+
+Competitive speed climbing is the newest discipline out of the three to gain popularity. This style of climbing involves scaling a fixed wall as fast as possible. The unique aspect of speed climbing is that the holds on the speed climbing wall are fixed. In other words, these holds are placed in exactly the same angle and position every single time the wall is climbed. This is vastly different from the variable nature of sport climbing and bouldering. Speed climbing demands flawless technique and exceptional endurance. Speed climbers must refine their movements in such a way that they are both extraordinarily fast and extremely consistent. In an interview conducted by GQ with professional speed climber Kyra Condie, she says of the importance of consistency in speed climbing: "Having that muscle memory makes you go faster because hitting everything perfectly is one thing that takes off a fraction of a second". This muscle memory allows climbers to fly up the 15 meter speed wall relying almost purely on instinct and muscle memory. 
+
+IFSC speed climbing competitions consist of two rounds: a qualifying and a final. In the qualifying round, climbers have two attempts to score their best time by climbing the speed wall as fast as possible. The climbers with the top 16 qualifying times then advance to the final round where they compete in head to head races against other qualifiers. The winner of each of these head to head races then advances to the next round of the final. Consequently, the amount of competitors in the final round are cut in half through each round of head to head races until there is a winner.
+
+The disparities between speed climbing and lead climbing or bouldering are so substantial that climbers generally tend to specialize either in lead climbing and/or bouldering, or solely in speed climbing. Lead climbing and bouldering typically focus on strength, power, and "route finding", or the aspect of puzzling out how a climber can move through the climbing holds. On the other hand, speed climbing focuses on endurance, rapid bursts of power, and the ability to fine-tune movements to remain consistently fast on the wall. These differences in skill sets between disciplines means that climbers must train differently based on what they specialize in. In a 2016 survey conducted by Climbing Magazine, one climber noted of speed climbing: "Those skills/abilities don’t transfer as well to the other disciplines". Consequently the climbing community was left in shock when it was announced that in the 2020 Olympics climbers would have to participate in all three disciplines. In a Yahoo!Sports article written by Hannah Keyser, one climber is quoted as saying “It's like getting the track athletes that have always just been single discipline athletes to suddenly do the shot put, the 100 meters and the 1500 or something”.  Climbers from every discipline of the sport were upset by the decision to format the event in such a manner. Despite confusion surrounding the event format, these athletes would have to quickly learn a completely new set of skills if they hoped to excel in the upcoming Olympic event.
+
+In preparation for the 2020 Olympic games there was a surge of boulderers and lead climbers scrambling to pick up speed climbing. One of these climbers, Tomoa Narasaki, was a competitive boulderer hailing from Japan. Like many other athletes, Narasaki had entered the foreign world of speed climbing in preparation for the Olympic games. Drawing upon his bouldering expertise, Narasaki soon introduced a groundbreaking speed climbing technique later dubbed the Tomoa Skip. This new technique blended the powerful and dynamic style of bouldering with the rapid ascent of speed climbing. The Tomoa skip is a strategic approach, often referred to as a "beta", to climbing through the initial segment of the speed climbing wall. This approach centers around the first 4~ handholds of the speed wall and involves climbers propelling themselves up and over a particular handhold, allowing them to bypass the utilization of a hold off to the left.
+
+The introduction of the Tomoa skip marked a shift in the speed climbing community. The fusion of bouldering and speed climbing techniques sparked by the upcoming Olympic games brought fourth a completely new dimension of technique and strategy that was quickly adopted by the community as a whole. This paper aims to delve into the impact of the Tomoa skip on speed climbing times and explore the possibility that this groundbreaking technique has, in fact, led to increased variability in climbing times due to the potentially riskier movement. 
+
+## Data
+
+To answer these questions, we turned to the catalog of speed climbing records maintained by the IFSC. This repository encompasses speed climbing competition results dating back as far as 1990 and extends up to the present date. To retrieve these results we made use of the Selenium automated web browser to develop a web scraper that extracted information from HTML tables. This web scraper targeted the result pages from speed climbing competitions held from 2012 to 2022, a period chosen because speed climbing result data is most prevalent from 2012 onward and data recorded prior to 2012 is difficult to scrape. To do this, the scraper iterates through each event listed on the IFSC website, capturing the unique ID of each of these events as well as their name and start and end dates. From here, the scraper iterates through these unique event IDs corresponding to events in our chosen date ranges and constructs a URL used to navigate to the competition result page corresponding to each event. Once this page has been navigated to, the scraper retrieves and stores the event's data using the rvest package to transform an HTML table into an R dataframe. From this process, we gather information pertaining to individual climber's performance in the qualifying and final rounds of each speed climbing competition that they have competed in.
+
+After collecting this competition result data, it was necessary to determine which climbers utilized the Tomoa skip and in which events they used it in. As this data is not recorded anywhere, the only way to determine which climbers used the Tomoa skip was to view videos of climbing competitions broadcasted by the IFSC and record which individual climbers used the Tomoa skip in each competition. This was done by viewing filmed broadcasts of the final rounds of speed climbing competitions held from 2018 to 2022 on the IFSC YouTube channel. This specific date range was chosen because Tomoa Narasaki did not introduce the Tomoa Skip until 2018. In order to determine which climbers employed the Tomoa Skip, we slowed each video down to half speed or slower, giving us a more detailed view of each climber's movements. For each climber competing in the video we were viewing, we watched for whether they executed the Tomoa Skip by identifying if they propelled themselves from the starting position to the second hold. From here, if they use their feet on that same hold to subsequently launch themselves to the following hold, that climber is denoted as having used the Tomoa Skip. Through this process, we examined 54 videos at around 108 hours of footage.
+
+```{r skip-time, echo=FALSE, fig.align='center', fig.cap="Tomoa skip usage over time. Since the introduction of the move in 2018 there has been a steady increase in Tomoa skip usage for both men and women.", message=FALSE, warning=FALSE, out.width="70%"}
+label_names <- c('F' = 'Womens', 'M' = 'Mens')
+custom_colors <- c("Tomoa Skip" = "#d95f02", "No Tomoa Skip" = "#7570b3")
+# Number of tomoa skip users per start date
+m_times_update |>
+  bind_rows(w_times_update) |>
+  group_by(sex, start_date) |>
+  filter(!is.na(tomoa_skip)) |>
+  summarise(num_ts = sum(tomoa_skip), num_no_ts = sum(!tomoa_skip)) |>
+  ggplot() +
+  geom_point(aes(start_date, num_ts, color = "Tomoa Skip")) + 
+  geom_point(aes(start_date, num_no_ts, color = "No Tomoa Skip")) + 
+  geom_smooth(aes(start_date, num_ts, color = "Tomoa Skip"), method = "auto") +
+  geom_smooth(aes(start_date, num_no_ts, color = "No Tomoa Skip"), method = "auto") +
+  facet_wrap(.~sex, labeller = as_labeller(label_names)) +
+  labs(x="Start Date", y = "Count") + 
+  theme(legend.title = element_blank()) +
+  scale_color_manual(values = custom_colors)
+```
+
+Although our web scraper retrieved data for qualifying and final rounds, the IFSC only broadcasts the final rounds of speed climbing competitions. This necessitated the creation of a script that implemented our assumption that if a climber uses the Tomoa skip in one round of an event, they will continue to use it in the future. This approach enables us to bridge the gaps in our dataset. For instance, if we have a documented occurrence of a climber using the Tomoa skip in one event, looking ahead, if this climber doesn't progress to a final round in future competitions we can still maintain a record indicating whether or not they utilized the skip. In order to avoid overgeneralizing, the script developed to implement this assumption takes into account the fact that some climbers may switch from using the Tomoa skip to not using the Tomoa skip. In this case, we simply perform the reverse action and assume that this climber will continue to not use the Tomoa skip in any future competitions up until we have a record indicating otherwise. This case, however, is extremely rare, with only one climber in our records documented as having made this switch back.
+
+```{r events-per-year, echo=FALSE, fig.align='center', fig.cap="Number of events per year. There is an average of approximately 15 events per year, with a notable deviation in the year 2020 due to COVID.", out.width="55%"}
+events |> 
+  group_by(year) |> 
+  summarise(
+    num_events = n()
+  ) |> 
+  ggplot(aes(x = year, y = num_events)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Year", y = "Number of Events") +
+  scale_x_continuous(breaks = seq(min(events$year), max(events$year), by = 1))
+```
+
+From the data we gathered, we can ascertain that between the years 2012 and 2022, there is an average of around 15 major speed climbing competitions that are held in each year. The number of events per year is shown in Figure \@ref(fig:events-per-year). Notably, in the year 2020, this pattern deviates, with only 5 competitions held. This can be attributed to the disruptive impact of COVID, as lock downs significantly impeded the ability of athletes to participate and compete in climbing competitions. In addition to this, we found that the speed climbing community quickly embraced the Tomoa Skip after it's introduction in 2018. By 2022, the Tomoa Skip had become the predominant choice among professional speed climbers, and by the end of that year, there are few climbers remaining who do not use the skip (see Figure \@ref(fig:skip-time) for reference).
+
+```{r echo=FALSE}
+combined_data <- rbind(
+  "Womens" = w_times_update |> 
+    filter(rank <= 16) |> 
+    summarise(
+      num_events = length(unique(event_id)),
+      num_fall_final = sum(fall_final, na.rm = TRUE),
+      num_fs_final = sum(false_start_final, na.rm=TRUE)
+    ) |> 
+    mutate(
+      fall_rate = num_fall_final / num_events,
+      fs_rate = num_fs_final / num_events,
+    ),
+  "Mens" = m_times_update |> 
+    filter(rank <= 16) |> 
+    summarise(
+      num_events = length(unique(event_id)),
+      num_fall_final = sum(fall_final, na.rm = TRUE),
+      num_fs_final = sum(false_start_final, na.rm=TRUE)
+    ) |> 
+    mutate(
+      fall_rate = num_fall_final / num_events,
+      fs_rate = num_fs_final / num_events,
+    )
+)
+
+combined_data <- combined_data |>
+  rownames_to_column(var = "Category")
+
+combined_data |>
+  kable(
+    digits = 2,
+    label = "fall-false-starts",
+    caption = "Fall and False Start Rates in Final Rounds for Men and Women",
+    booktabs = TRUE,
+    col.names = c("Category", "Events", "Falls", "False Starts", "Fall Rate", "False Start Rate"),
+  ) |>
+  kable_styling(latex_options = "HOLD_position") 
+```
+
+Our data offers insight into the performance of 952 distinct climbers during this time span, composed of 549 male climbers and 403 female climbers. Through our exploratory analysis we found that across 69 events, men experienced a fall rate of 2.04 during final rounds whereas women experienced a slightly lower fall rate of 1.52. This signifies that in a final round of a competition, on average, approximately 2 out of 16 male climbers will fall off of the wall. Similarly, men had a false-start rate of 0.826 during final rounds, whereas women had a false-start rate of 0.35. This translates to an average of 0.83 out of 16 male climbers starting their climb prematurely, resulting in their disqualification from the round. These fall and false start rates can be seen in Table \@ref(tab:fall-false-starts). 
+
+# Analysis
+
+## Effect of the Tomoa Skip on Speed Times
+
+In order to determine whether the Tomoa Skip has significantly impacted speed climbing times, we employed a mixed effects model. This approach allowed us to account for the inherent variability between climbers as well as to address the non-independence of individual climber performance. This is particularly valuable given that climbers exhibit a diverse range of skill levels and each may undergo differing rates of improvement. Additionally, a climber's performance in one event may be influenced by their performance in a prior event, a fact that would violate the assumption of independence in the traditional linear regression model. This is accounted for by random effects, which allow us to consider variations in both the initial skill level and the rate of progression of individual climbers. If we let $x_{1ij}$ denote use of the Tomoa skip at the $i^\text{th}$ event by the $j^\text{th}$ climber, $x_{2j}$ denote the gender of the $j^\text{th}$ climber, and $y_{ij}$ denote climber $j$'s best time of at the $i^\text{th}$ event, then we can formalize the model as follows.
+\begin{align*}
+\log(y_{ij}) &= \beta_{0ij} + \beta_{1ij} x_{1ij} + \gamma_{02} x_{2j} + \epsilon_{ij}  \\
+\beta_{0ij} &= \gamma_{00} + \mu_{0i} + \upsilon_{0j} \\
+\beta_{1ij} &= \gamma_{01} + \mu_{1i} + \upsilon_{1j} \\ 
+\begin{pmatrix} \mu_{0i} \\ \mu_{1i} \end{pmatrix} &\stackrel{\text{iid}}{\sim} \text{MVN}_2 
+    \begin{pmatrix} \begin{pmatrix} 0 \\ 0 \end{pmatrix} , 
+    \begin{pmatrix} \tau_{00} & \tau_{01} \\ \tau_{01} & \tau_{11}\end{pmatrix} 
+\end{pmatrix} \\ 
+\begin{pmatrix} \upsilon_{0j} \\ \upsilon_{1j} \end{pmatrix} &\stackrel{\text{iid}}{\sim} \text{MVN}_2 
+    \begin{pmatrix} \begin{pmatrix} 0 \\ 0 \end{pmatrix} , 
+    \begin{pmatrix} \eta_{00} & \eta_{01} \\ \eta_{01} & \eta_{11}\end{pmatrix} 
+\end{pmatrix} \\
+\epsilon_{ij} &\stackrel{\text{iid}}{\sim}\text{N}(0, \sigma^2).
+\end{align*}
+In the constructed model, we use the logarithm of a climber's best time for each event as the outcome variable due to the right-tailed nature of best times. This best time is determined by taking the climber's quickest performance out of all the rounds of a given event. This means that for every event a climber competes in, our model will only consider the round of that event in which they climbed the fastest. Applying the logarithm to these best times helps us to linearize our data, aligning it more effectively with the assumptions of our model. For predictors, we use an indicator of the climbers gender as a standard fixed effect and allow for a random effect in the intercept and slope associated with use of the Tomoa skip that varies by both climber and event. In using a fixed effect for climber's gender we are able to account for how differences in gender may affect times. In using random effects that allow the intercept and slope associated with use of the Tomoa skip to vary with both climber and event, we can account for variability between climbers as well as between events. For example, an individual climber has a certain talent level and training regimen that may differ from another climber. Additionally, weather or wall conditions can impact the speed times at different events in different ways. For instance, a competition on an extremely hot day may have a significant negative impact on the abilities of competing athletes. On the flip side, ideal temperatures and newer climbing holds could improve the grip of climbers, potentially leading to a slight advantage and faster times. 
+
+The key differences between the assumptions of the standard linear regression model and the mixed effects model are the assumptions of independence and the distributions of the random effects. In the mixed effects model, we do not have to assume that observations within the same group are independent, however, each group must be independent of each other. In our case, this means that how one climber performs should not influence the performance of another climber. With the introduction of random effects, we must now assume that the estimates of the random effects and residuals share an identical distribution. 
+
+```{r model-summary, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
+library(lme4)
+library(dplyr)
+library(tidyr)
+library(broom.mixed)
+library(rstanarm)
+library(kableExtra)
+library(insight)
+load("../../data/mTimes_skip.Rdata")
+load("../../data/wTimes_skip.Rdata")
+
+# Add full name
+m_times_update$full_name <- paste(m_times_update$fname, m_times_update$lname, sep = " ")
+w_times_update$full_name <- paste(w_times_update$fname, w_times_update$lname, sep = " ")
+
+# Add best time column
+m_times_update <- m_times_update |>
+  mutate(best_time = pmin(final, semi, best_qual, first_round, quarter, small_final, big_final, na.rm = TRUE))
+
+w_times_update <- w_times_update |>
+  mutate(best_time = pmin(final, semi, best_qual, first_round, quarter, small_final, big_final, na.rm = TRUE))
+
+m_times_update |> mutate(sex = "m") |>
+  bind_rows(w_times_update |> mutate(sex = "w")) -> times
+
+times |> select(tomoa_skip, full_name, event, sex, best_time) -> reg_times
+reg_times <- reg_times[complete.cases(reg_times), ]
+m6 <- lmer(log(best_time) ~ tomoa_skip + sex + (1 + tomoa_skip | full_name) + (1 + tomoa_skip | event), data = reg_times)
+
+#Fixed effect estimates
+fixed_ef_summary <- tidy(m6)
+selected_terms <- c("(Intercept)", "tomoa_skipTRUE", "sexw")
+selected_columns <- c("term", "estimate")
+
+#Get fixed effect rows and cols
+fixed_ef_summary <- fixed_ef_summary |>
+  filter(term %in% selected_terms) |>
+  select(selected_columns)
+
+#get CIs for fixed effects
+CIs <- data.frame(confint(m6, method="Wald"))
+selected_rows <- CIs[c("(Intercept)", "tomoa_skipTRUE", "sexw"), ]
+selected_rows$CI <- paste("(", round(selected_rows$`X2.5`, 4), ", ", round(selected_rows$`X97.5`, 4), ")", sep = "")
+selected_rows <- selected_rows |> select(-starts_with("X2.5"), -starts_with("X97.5"))
+fixed_ef_summary <- bind_cols(fixed_ef_summary, selected_rows)
+fixed_ef_summary$term <- c("$\\gamma_{00}$", "$\\gamma_{01}$", "$\\gamma_{02}$")
+
+#get variance components
+var_comps <- get_variance(m6)
+
+rand_ef_summary <- data.frame(
+  sigma_2 = round(var_comps$var.residual, 4),
+  tau_00full_name = round(var_comps$var.intercept[1], 4),
+  tau_00event = round(var_comps$var.intercept[2], 4),
+  tau_11full_name.tomoa_skipTRUE =  round(var_comps$var.slope[1],4),
+  tau_11event.tomoa_skipTRUE = round(var_comps$var.slope[2], 4),
+  rho_01full_name = round(var_comps$cor.slope_intercept[1], 4),
+  rho_01event = round(var_comps$cor.slope_intercept[2], 4)
+)
+
+rand_ef_summary <- gather(rand_ef_summary, key = "term", value = "estimate")
+rand_ef_summary$estimate = as.numeric(rand_ef_summary$estimate)
+rand_ef_summary$term <- c("$\\sigma^2$", "$\\eta_{00}$", "$\\tau_{00}$", "$\\eta_{11}$", "$\\tau_{11}$", "$\\eta_{01}$", "$\\tau_{01}$")
+
+#Combine the two summaries
+combined_summary <- bind_rows(fixed_ef_summary, rand_ef_summary)
+
+combined_summary |>
+  replace_na(list(CI = "")) |>
+  kable(
+    booktabs = TRUE,
+    escape = FALSE,
+    format = 'latex',
+    align = "lcc",
+    digits=4,
+    caption = "Summary of our mixed effect model's fixed and random effects", 
+    col.names = c("Term", "Estimate", "95\\% CI")
+    ) |>
+    # add_header_above(c(" ", "log(y)" = 2), bold=T) |>
+    pack_rows("Random Effects", 4, 10, bold=T, latex_gap_space = ".8em") |>
+    pack_rows("Fixed Effects", 1, 3, bold=T, latex_gap_space = ".8em")
+
+```
+
+After fitting the model we observe an estimated fixed effect for the Tomoa skip of `r round(fixed_ef_summary$estimate[2], 4)` with corresponding 95% CI of `r fixed_ef_summary$CI[2]`. Because we took the logarithm of the climbers' best times in each event, this estimate signifies that after controlling for variation in individual climbers and events, using the Tomoa skip is associated with an approximately `r round(exp(fixed_ef_summary$estimate[2]), 4)` times decrease in the average best climbing time (95% CI: `r paste0("(", paste(round(exp(CIs[9,]), 4), collapse = ", "), ")")`). For instance, if a climber has a best climbing time of 7 seconds without using the Tomoa skip, we estimate that their best time would drop to approximately `r round(exp(fixed_ef_summary$estimate[2])*7, 4)` seconds using the Tomoa skip. In the world of speed climbing, where a fraction of a second can mean the difference between success and failure, this seemingly small improvement constitutes a significant and impactful advancement.
+
+<!-- Subsequently, using the Tomoa skip has indeed improved climbers performance.  Interestingly the estimated fixed effect for the sex indicator is 0.28, corresponding to a 1.32313 times increase in climbing time. This tells us that the best times of women, on average and holding all other things constant, are approximately 1.32 times slower than men (95% CI: 1.29693 - 1.363425). (should this even be included???) -->
+
+## Effect of the Tomoa Skip on Variability of Speed Climbing Times
+
+```{r ts-ranges, echo=FALSE, fig.align='center', message=FALSE, warning=FALSE, out.width="100%", fig.cap="Boxplots of the ranges of climbers who use the Tomoa skip vs those who do not. When the Tomoa skip is first introduced there seems to be more variability in the ranges of Tomoa skip users. This variability lessens as time goes on."}
+library(stringr)
+
+m_times_update$full_name <- paste(m_times_update$fname, m_times_update$lname, sep = " ")
+w_times_update$full_name <- paste(w_times_update$fname, w_times_update$lname, sep = " ")
+m_times_update |> mutate(sex = "m") |>
+  bind_rows(w_times_update |> mutate(sex = "w")) -> all_climbers 
+
+all_climbers <- all_climbers |>
+  rowwise() |>
+  pivot_longer(cols = c("best_qual", "final", "lane_a", "lane_b", "first_round",
+                        "quarter", "semi", "small_final", "big_final"), names_to = "round", values_to = "time") |>
+  group_by(event, start_date) |> # Only keep events in which there was both tomoa skip and no tomoa skip used
+  filter(any(!is.na(time) & tomoa_skip == TRUE) &
+           any(!is.na(time) & tomoa_skip == FALSE)) |>
+  filter(!is.na(time) & !is.na(tomoa_skip)) |>
+  ungroup() |>
+  group_by(full_name, event, start_date, tomoa_skip) |>
+  summarise(min_time = min(time, na.rm = TRUE),
+            max_time = max(time, na.rm = TRUE)) |>
+  mutate(range_time = max_time - min_time) |>
+  mutate(event = ifelse(start_date == "2022-05-20", "IFSC - Climbing World Cup (B,S) - Salt Lake City (USA) 2022 I", 
+                        ifelse(start_date == "2022-05-27", "IFSC - Climbing World Cup (B,S) - Salt Lake City (USA) 2022 II", event))) |>
+  mutate(event = str_split(event, "-") |> sapply(function(x) trimws(x[length(x)]))) 
+
+custom_colors <- c("TRUE" = "#d95f02", "FALSE" = "#7570b3")
+
+all_climbers |>
+  mutate(event = factor(event, levels = rev(unique(all_climbers[, c("event", "start_date")]) |> arrange(start_date) %>% .$event))) |>
+  ggplot(aes(x=event, y = range_time, group = paste(event, tomoa_skip), fill = factor(tomoa_skip))) +
+  geom_boxplot(trim = TRUE) +
+  xlab("") +
+  ylab("Time (s)") +
+  theme_minimal() +
+  coord_flip() +
+  scale_fill_manual(name = "Tomoa Skip", values = custom_colors) 
+```
+
+Although we have established that the Tomoa skip has had a significant impact on speed climbing times, we now want to determine whether or not this improvement stays consistent. In other words, we want to determine whether or not adopting the Tomoa skip has heightened the variability of speed climbing times. In order to investigate this question we can first examine the ranges of climbing times in different events between those that use the Tomoa skip and those who do not. The range for an individual climber in an event is their best time minus their worst time for that event. A climber with a low range can be said to be highly consistent in their climbing times. In 2019, when the Tomoa skip is first being widely used in competitions, there seems to be more variability in the ranges of Tomoa skip users when compared to those who did not use the Tomoa skip. As time goes on it appears that the variability of climber ranges between Tomoa skip users and non-Tomoa skip users becomes increasingly similar. This could be the result of climbers becoming more familiar with the techniques required to successfully perform the Tomoa skip as time goes on. These patterns can be seen in Figure \@ref(fig:ts-ranges).
+
+```{r ts-progression, echo=FALSE, fig.align='center', message=FALSE, warning=FALSE, out.width="70%", fig.cap="Progression of four climbers speed climbing times before and after adopting the Tomoa skip. The grey rectangle denotes days after each climber has adopted the Tomoa skip. Red points denotes the climbers best time for each event."}
+library(stringr)
+
+# Find first Tomoa Skip dates and days since first skip
+test_df <- m_times_update |>
+  bind_rows(w_times_update)
+test_df$full_name <- paste(test_df$fname, test_df$lname, sep = " ")
+true_ts_df <- subset(test_df, tomoa_skip == TRUE)
+earliest_dates <- aggregate(start_date ~ full_name, data = true_ts_df, FUN = min)
+test_df$days_since_first_skip <- as.numeric(test_df$start_date - earliest_dates$start_date[match(test_df$full_name, earliest_dates$full_name)])
+
+test_df |>
+  pivot_longer(cols = c("best_qual", "final", "lane_a", "lane_b", "first_round", "quarter", "semi", "small_final", "big_final"), names_to = "round", values_to = "time") |>
+  group_by(fname, lname, tomoa_skip, sex, event_id, year, start_date, days_since_first_skip) |>
+  mutate(best_time = if (all(is.na(time))) NA else min(time, na.rm = TRUE)) |>
+  group_by(fname, lname) |> 
+  mutate(count = length(unique(event_id))) |>  
+  filter(!is.na(best_time) & !is.na(days_since_first_skip) & count > 10 & time < 50) |>
+  # filter(!is.na(days_since_first_skip) & count > 10 & time < 50) |> 
+  filter(lname == "brosler" | fname == "veddriq" | lname == "miroslaw" | lname == "brozek") |>
+  ggplot(aes(days_since_first_skip, time)) +
+  geom_rect(aes(xmin = 0, xmax = Inf, ymin = -Inf, ymax = Inf), fill = "grey", alpha = .1) +
+  # geom_vline(aes(xintercept = 0), lty = 2, color = "red") +
+  geom_point(aes(group = paste(fname, lname)), alpha = 0.4) +
+  geom_point(aes(days_since_first_skip, best_time, group = paste(fname, lname)), color="#d95f02") +
+  geom_smooth(aes(days_since_first_skip, best_time, group = paste(fname, lname)), color="#d95f02", se = FALSE) +
+  facet_wrap(~str_to_title(paste(fname, lname))) +
+  # ggtitle("Best Time Per Event") +
+  labs(x = "Days since first Tomoa skip", y = "Best Time") +
+  theme(legend.position = "none") +
+  ylim(c(4.99, 8))
+```
+
+In addition to examining the ranges of climbers we can also look at the progression of climbing times for various athletes before and after they adopt the Tomoa skip. Noticeably, speed climbers John Brosler and, to a lesser extent, Veddriq Leonardo both may exhibit some form of increased variability in their climbing times after they adopt the Tomoa skip. In other words, after adopting the Tomoa skip, these climbers seem to have a wider range of climbing times. Although they achieve new personal records, and in some cases world records after adopting the Tomoa skip, they also log a potentially unusual slew of slower times. Visually this can be seen in Figure \@ref(fig:ts-progression) where the grey rectangle represents progressing days after the Tomoa skip has been adopted by these climbers. 
+
+Another way to examine the relationship between the Tomoa skip and variability of speed climbing times is to look at falls. Because the Tomoa skip requires dynamic movement and strong technique it could be reasoned that it may be a riskier strategy for many speed climbers. In order to address this question we fit a generalized mixed effects model similar to the model used to analyze the effect of the Tomoa skip on speed climbing times. This model differs from our previous model by using falls as the outcome variable instead of the climber's best times and is generalized to the binomial distribution as a climber will never fall more than once in a competition. After fitting our model, we failed to identify a significant relationship between climbers falling and Tomoa skip usage. Although visually we may see some patterns that indicate an increased variability in speed climbing times linked to Tomoa skip usage, it appears that the Tomoa skip does not have a great effect on the variability of speed climbing times.
+
+# Discussion
+
+The introduction of the Tomoa skip has left a notable impact on the speed climbing community. Between 2021 and 2023, the mens speed climbing record has been broken a staggering 9 times. The most recent record has pushed the sport into the sub 5 second zone for the first time in history. For reference, between the years 2012 and 2017, only 6 records were broken. A similar trend is also present in the recent storm of broken woman's speed records with 12 records broken between 2018 and 2023 and 7 records broken between 2013 and 2017. These patterns can be seen in Figure \@ref(fig:wr-holdage).
+
+```{r wr-holdage, echo=FALSE, fig.align='center', fig.cap="World record holdage over time. The grey rectangle denotes the period at which the Tomoa skip has been introduced. After the Tomoa skip is introduced, a slew of mens and womens records are broken over a short period of time.", message=FALSE, warning=FALSE, out.width="70%"}
+library(dplyr)
+library(scales)
+
+wr_data <- data.frame(
+  year = as.Date(c("2011-08-27", "2012-10-13", "2012-10-13", "2014-08-31", "2014-09-12", "2017-04-30", "2021-05-28", "2021-05-28",
+           "2022-05-06", "2022-05-21", "2022-06-30", "2022-06-30", "2022-07-08", "2023-04-08", "2023-04-28", 
+           "2017-04-23", "2017-04-30", "2017-07-22", "2019-04-26", "2019-10-19", "2020-11-21", "2021-08-06",
+           "2022-05-06", "2022-05-27", "2023-04-28", "2023-04-28", "2023-04-28", "2023-04-28", "2023-09-15", "2018-04-22", "2017-07-22", "2017-04-30", "2017-04-23", "2015-07-11", "2015-06-21", "2015-04-17", "2014-10-19")),
+  sex = c("M", "M", "M", "M", "M", "M", "M", "M", "M", "M", "M", "M", "M", "M", "M", "F", "F", "F", "F", "F", "F",
+          "F", "F", "F", "F", "F", "F", "F", "F", "F", "F", "F", "F", "F", "F", "F", "F"),
+  record = c(6.26 ,6.07, 5.88, 5.73, 5.60, 5.48, 5.25, 5.20, 5.17, 5.10, 5.09, 5.04, 5.00, 4.98, 4.90, 7.46, 7.38,   7.32, 7.10, 6.99, 6.96, 6.84, 6.64, 6.53, 6.46, 6.37, 6.35, 6.25, 6.24, 7.32, 7.32, 7.38, 7.46, 7.53, 7.56, 7.74, 7.85)
+) 
+
+wr_data <- wr_data |>
+  arrange(sex, year) |>
+  group_by(sex) |>
+  mutate(duration = if_else(is.na(lead(year)), 0, as.numeric(lead(year) - year)))
+  
+
+label_names <- c('F' = "Womens", 'M' = "Mens")
+
+ggplot(wr_data, aes(x = year, y = record)) +
+  geom_rect(aes(xmin = as.Date("2018-08-18"), xmax = as.Date(Inf), ymin = as.Date(-Inf), ymax = as.Date(Inf)), fill = "grey", alpha = .1) +
+  geom_point(size = 0.76) +
+  labs(x = "Date", y = "Record", color = "Gender") +
+  facet_wrap(~sex, labeller = as_labeller(label_names)) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none") + 
+  geom_segment(aes(x = year, xend = year + duration, y = record, yend = record))
+```
+
+Although many were upset with the combined format of the 2020 Olympic games, it is feasible that this groundbreaking and powerful maneuver would have never been introduced into the world of speed climbing if not for this format. The introduction of boulderer Tomoa Narasaki to speed climbing is what led to this unique convergence of disciplines where skills are shared and adapted between styles. The groundbreaking success of the Tomoa skip highlights the potential of collaboration between different disciplines of climbing, emphasizing that bringing together climbers of different backgrounds and styles may contribute to the overall health and evolution of the sport.
+
+Our findings were limited by the data that was available. The absence of formally documented data on who has performed the Tomoa skip limits our data to what we can view in recorded competitions, limiting our knowledge to climbers who have reached final rounds. This could potentially bias our findings towards those top speed climbers who are consistently reaching the final rounds of competitions. This fact also necessitated our assuming that those who use the skip once will continue to use it. Although our findings suggest that this is a reasonable assumption to make, we run the risk of overgeneralizing. 
+
+# Further Reading
+
+
