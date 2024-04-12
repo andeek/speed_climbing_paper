@@ -42,9 +42,6 @@ m2 <- glmer(total_falls ~ tomoa_skip + sex + (1 + tomoa_skip | full_name) +
 summary(m1)
 summary(m2)
 
-# Examine assumptions
-# Partial residual plot
-#visreg(m2, "tomoa_skip", scale = "response")
 # QQ plot of random effects
 qqmath(ranef(m2))
 

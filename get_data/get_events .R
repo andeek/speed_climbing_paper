@@ -4,8 +4,8 @@ library(tidyr) ## data tidy
 library(lubridate) ## dates
 
 ## remote driver
-# driver <- rsDriver(browser = "chrome", chromever = "113.0.5672.63", verbose = TRUE, iedrver = NULL, geckover = NULL, phantomver = NULL)
-driver <- rsDriver(browser = "firefox", chromever = NULL, iedrver = NULL, verbose = TRUE)
+driver <- rsDriver(browser = "chrome", chromever = "106.0.5249.21", verbose = TRUE, iedrver = NULL, geckover = NULL, phantomver = NULL)
+##driver <- rsDriver(browser = "firefox", chromever = NULL, iedrver = NULL, verbose = TRUE)
 remote_driver <- driver$client
 
 ## get events for each year
