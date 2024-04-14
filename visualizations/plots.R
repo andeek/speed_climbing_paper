@@ -7,9 +7,12 @@ library(stringr)
 library(scales)
 
 # Load data
-load("data/mTimes_skip.Rdata")
-load("data/wTimes_skip.Rdata")
-load("data/events.Rdata")
+m_times_update <- read.csv("data/mTimes_skip.csv")
+w_times_update <- read.csv("data/wTimes_skip.csv")
+m_times_update$start_date <- as.Date(m_times_update$start_date)
+w_times_update$start_date <- as.Date(w_times_update$start_date)
+w_times_update$sex <- "F"
+events <- read.csv("data/events.csv")
 
 
 # Number of Tomoa Skip users per start date plot
@@ -30,6 +33,7 @@ m_times_update |>
   labs(x="Start Date", y = "Count Tomoa Skip Usage") + 
   theme(legend.title = element_blank()) +
   scale_color_manual(values = custom_colors) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
   theme(legend.position = "bottom")
 
 
@@ -44,6 +48,7 @@ events |>
   geom_point() +
   labs(x = "Year", y = "Number of Events") +
   scale_x_continuous(breaks = seq(min(events$year), max(events$year), by = 1)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   ylim(0, NA) 
 
 

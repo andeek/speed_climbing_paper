@@ -16,9 +16,12 @@ library(broom.mixed)
 library(rstanarm)
 library(insight)
 
-load("../data/mTimes_skip.Rdata")
-load("../data/wTimes_skip.Rdata")
-load("../data/events.Rdata")
+m_times_update <- read.csv("../data/mTimes_skip.csv")
+w_times_update <- read.csv("../data/wTimes_skip.csv")
+m_times_update$start_date <- as.Date(m_times_update$start_date)
+w_times_update$start_date <- as.Date(w_times_update$start_date)
+w_times_update$sex <- "F"
+events <- read.csv("../data/events.csv")
 
 theme_set(theme_bw(base_family = "serif"))
 

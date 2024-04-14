@@ -1,11 +1,22 @@
+###############################################
+#   The IFSC website has changed significantly since the use of these web scrapers. 
+#   As of this date, these scripts are not compatible with the current iteration of the IFSC website,
+#   however, they are included in this repository for posterity. The current iteration of the IFSC website's 
+#   event pages can be found at the IFSC Climbing Calendar (https://www.ifsc-climbing.org/calendar/index) and 
+#   the Event Result Service Page (https://ifsc.results.info/#/). The data that we collected from these scripts 
+#   can be found in the Datadirectory.
+###############################################
+
+
+
 library(RSelenium) ## connect to websites via selenium server
 library(dplyr) ## data munge
 library(tidyr) ## data tidy
 library(lubridate) ## dates
 
 ## remote driver
-driver <- rsDriver(browser = "chrome", chromever = "106.0.5249.21", verbose = TRUE, iedrver = NULL, geckover = NULL, phantomver = NULL)
-##driver <- rsDriver(browser = "firefox", chromever = NULL, iedrver = NULL, verbose = TRUE)
+##driver <- rsDriver(browser = "chrome", chromever = "106.0.5249.21", verbose = TRUE, iedrver = NULL, geckover = NULL, phantomver = NULL)
+driver <- rsDriver(browser = "firefox", chromever = NULL, iedrver = NULL, verbose = TRUE)
 remote_driver <- driver$client
 
 ## get events for each year
@@ -14,6 +25,7 @@ events <- data.frame()
 for(y in years) {
   ## navigate to results
   remote_driver$navigate("https://components.ifsc-climbing.org/calendar")
+  Sys.sleep(2)
   element_year <- remote_driver$findElement(using = "css", value = "select#yearSelect")
   Sys.sleep(2)
   

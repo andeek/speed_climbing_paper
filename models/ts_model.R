@@ -12,8 +12,8 @@ library(parallel)
 
 
 ## SETUP ##
-load("data/mTimes_skip.Rdata")
-load("data/wTimes_skip.Rdata")
+m_times_update <- read.csv("data/mTimes_skip.csv")
+w_times_update <- read.csv("data/wTimes_skip.csv")
 
 # Add full name
 m_times_update$full_name <- paste(m_times_update$fname, m_times_update$lname, sep = " ")

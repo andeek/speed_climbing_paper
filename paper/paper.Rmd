@@ -16,9 +16,12 @@ nocite: |
 library(kableExtra)
 library(tidyverse)
 library(patchwork)
-load("../data/mTimes_skip.Rdata")
-load("../data/wTimes_skip.Rdata")
-load("../data/events.Rdata")
+m_times_update <- read.csv("../data/mTimes_skip.csv")
+w_times_update <- read.csv("../data/wTimes_skip.csv")
+m_times_update$start_date <- as.Date(m_times_update$start_date)
+w_times_update$start_date <- as.Date(w_times_update$start_date)
+w_times_update$sex <- "F"
+events <- read.csv("../data/events.csv")
 
 theme_set(theme_bw(base_family = "serif"))
 
@@ -75,6 +78,7 @@ m_times_update |>
   labs(x="Start Date", y = "Count Tomoa Skip Usage") + 
   theme(legend.title = element_blank()) +
   scale_color_manual(values = custom_colors) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   theme(legend.position = "bottom") -> p.skip_time
 ```
 
@@ -91,6 +95,7 @@ events |>
   geom_point() +
   labs(x = "Year", y = "Number of Events") +
   scale_x_continuous(breaks = seq(min(events$year), max(events$year), by = 1)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   ylim(0, NA) -> p.events_per_year
 
 p.events_per_year + p.skip_time
@@ -138,7 +143,7 @@ combined_data |>
   kable_styling(latex_options = "HOLD_position") 
 ```
 
-Our data offers insight into the performance of 952 distinct climbers during this time span, composed of 549 male climbers and 403 female climbers. Through our exploratory analysis we found that across 69 events, men experienced a fall rate of 2.04 during final rounds whereas women experienced a slightly lower fall rate of 1.52. This signifies that in a final round of a competition, on average, approximately 2 out of 16 male climbers will fall off of the wall. Similarly, men had a false-start rate of 0.826 during final rounds, whereas women had a false-start rate of 0.35. This translates to an average of 0.83 out of 16 male climbers starting their climb prematurely, resulting in their disqualification from the round. These fall and false start rates can be seen in Table \@ref(tab:fall-false-starts). 
+Our data offers insight into the performance of 952 distinct climbers during this time span, composed of 549 male climbers and 403 female climbers. Through our exploratory analysis we found that across 69 events, men experienced a fall rate of 2.04 during final rounds whereas women experienced a slightly lower fall rate of 1.52. This signifies that in a final round of a competition, on average, approximately 2 out of 16 male climbers will fall off of the wall. Similarly, men had a false-start rate of 0.83 during final rounds, whereas women had a false-start rate of 0.35. This translates to an average of 0.83 out of 16 male climbers starting their climb prematurely, resulting in their disqualification from the round. These fall and false start rates can be seen in Table \@ref(tab:fall-false-starts). 
 
 # How Important is the Tomoa Skip?
 
@@ -174,8 +179,8 @@ library(rstanarm)
 library(kableExtra)
 library(insight)
 
-load("../data/mTimes_skip.Rdata")
-load("../data/wTimes_skip.Rdata")
+m_times_update <- read.csv("../data/mTimes_skip.csv")
+w_times_update <- read.csv("../data/wTimes_skip.csv")
 
 # Add full name
 m_times_update$full_name <- paste(m_times_update$fname, m_times_update$lname, sep = " ")
@@ -258,13 +263,15 @@ The results of fitting this model are presented in Table \@ref(tab:model-summary
 
 ```{r ts-progression, echo=FALSE, fig.align='center', message=FALSE, warning=FALSE, out.width="70%", fig.cap="Progression of four climbers speed climbing times before and after adopting the Tomoa Skip. The grey rectangle denotes days after each climber has adopted the Tomoa Skip. Black points denote the climbers times in an event and red points denotes the climbers best time for each event. The lines are smoothed fits through the climbers best times to help show trends."}
 library(stringr)
-
+w_times_update$sex <- as.character(w_times_update$sex)
 # Find first Tomoa Skip dates and days since first skip
 test_df <- m_times_update |>
   bind_rows(w_times_update)
 test_df$full_name <- paste(test_df$fname, test_df$lname, sep = " ")
 true_ts_df <- subset(test_df, tomoa_skip == TRUE)
 earliest_dates <- aggregate(start_date ~ full_name, data = true_ts_df, FUN = min)
+test_df$start_date <- as.Date(test_df$start_date)
+earliest_dates$start_date <- as.Date(earliest_dates$start_date)
 test_df$days_since_first_skip <- as.numeric(test_df$start_date - earliest_dates$start_date[match(test_df$full_name, earliest_dates$full_name)])
 
 test_df |>

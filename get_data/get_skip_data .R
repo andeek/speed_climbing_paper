@@ -1,3 +1,13 @@
+###############################################
+#   The IFSC website has changed significantly since the use of these web scrapers. 
+#   As of this date, these scripts are not compatible with the current iteration of the IFSC website,
+#   however, they are included in this repository for posterity. The current iteration of the IFSC website's 
+#   event pages can be found at the IFSC Climbing Calendar (https://www.ifsc-climbing.org/calendar/index) and 
+#   the Event Result Service Page (https://ifsc.results.info/#/). The data that we collected from these scripts 
+#   can be found in the Datadirectory.
+###############################################
+
+
 # Required libraries
 library(dplyr)
 library(googlesheets4)
