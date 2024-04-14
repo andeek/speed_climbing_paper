@@ -13,7 +13,7 @@ This directory contains all the web scrapers that we developed to scrape the IFS
 **get_skip_data.R:** This file contains a script that iterates through our datasets and marks climbers as using the Tomoa Skip or not using the Tomoa Skip.
 
 # data 
-This directory contains the various data files used. **ts_data_[gender].csv** contains our data regarding which climbers use the Tomoa Skip. The **events.Rdata** file contains the scraped events from the IFSC website. The rest of the files in this directory contain the result data for mens and womens speed climbing compeitions. The Rdata files with the **_skip** postfix contain this same result data with the Tomoa Skip information for each climber added.
+This directory contains the various data files used. **ts_data_[gender].csv** contains our data regarding which climbers use the Tomoa Skip. The **events.csv** file contains the scraped events from the IFSC website. The rest of the files in this directory contain the result data for mens and womens speed climbing compeitions. The Rdata files with the **_skip** postfix contain this same result data with the Tomoa Skip information for each climber added.
 
 # visualizations
 This directory contains all plots and tables used in our paper. **plots.r** contains the R code used to create each plot, and **tables.rmd** contains the R code and markdown used to render each table used in the paper. 
