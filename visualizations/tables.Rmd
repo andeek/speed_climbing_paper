@@ -16,11 +16,11 @@ library(broom.mixed)
 library(rstanarm)
 library(insight)
 
-m_times_update <- read.csv("../data/mTimes_skip.csv")
-w_times_update <- read.csv("../data/wTimes_skip.csv")
-m_times_update$start_date <- as.Date(m_times_update$start_date)
-w_times_update$start_date <- as.Date(w_times_update$start_date)
-w_times_update$sex <- "F"
+mTimes_skip <- read.csv("../data/mTimes_skip.csv")
+wTimes_skip <- read.csv("../data/wTimes_skip.csv")
+mTimes_skip$start_date <- as.Date(mTimes_skip$start_date)
+wTimes_skip$start_date <- as.Date(wTimes_skip$start_date)
+wTimes_skip$sex <- "F"
 events <- read.csv("../data/events.csv")
 
 theme_set(theme_bw(base_family = "serif"))
@@ -31,7 +31,7 @@ theme_set(theme_bw(base_family = "serif"))
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Fall and false start rate table
 combined_data <- rbind(
-  "Womens" = w_times_update |> 
+  "Womens" = wTimes_skip |> 
     filter(rank <= 16) |> 
     summarise(
       num_events = length(unique(event_id)),
@@ -42,7 +42,7 @@ combined_data <- rbind(
       fall_rate = num_fall_final / num_events,
       fs_rate = num_fs_final / num_events,
     ),
-  "Mens" = m_times_update |> 
+  "Mens" = mTimes_skip |> 
     filter(rank <= 16) |> 
     summarise(
       num_events = length(unique(event_id)),
@@ -67,29 +67,112 @@ combined_data |>
     col.names = c("Category", "Events", "Falls", "False Starts", "Fall Rate", "False Start Rate"),
   ) 
 ```
+```{r model-comparison-anova, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
+library(lme4)
+library(broom)
+library(knitr)
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
+mTimes_with_ages <- read.csv("../data/mTimesAges.csv")
+wTimes_with_ages <- read.csv("../data/wTimesAges.csv")
+
 # Add full name
-m_times_update$full_name <- paste(m_times_update$fname, m_times_update$lname, sep = " ")
-w_times_update$full_name <- paste(w_times_update$fname, w_times_update$lname, sep = " ")
+mTimes_with_ages$full_name <- paste(mTimes_with_ages$fname, mTimes_with_ages$lname, sep = " ")
+wTimes_with_ages$full_name <- paste(wTimes_with_ages$fname, wTimes_with_ages$lname, sep = " ")
 
 # Add best time column
-m_times_update <- m_times_update |>
+mTimes_with_ages <- mTimes_with_ages |>
   mutate(best_time = pmin(final, semi, best_qual, first_round, quarter, small_final, big_final, na.rm = TRUE))
 
-w_times_update <- w_times_update |>
+wTimes_with_ages <- wTimes_with_ages |>
   mutate(best_time = pmin(final, semi, best_qual, first_round, quarter, small_final, big_final, na.rm = TRUE))
 
-m_times_update |> mutate(sex = "m") |>
-  bind_rows(w_times_update |> mutate(sex = "w")) -> times
+mTimes_with_ages |> mutate(sex = "m") |>
+  bind_rows(wTimes_with_ages |> mutate(sex = "w")) -> times
 
-times |> select(tomoa_skip, full_name, event, sex, best_time) -> reg_times
+times |> select(tomoa_skip, full_name, event, sex, best_time, age, time_progression) -> reg_times
 reg_times <- reg_times[complete.cases(reg_times), ]
-m6 <- lmer(log(best_time) ~ tomoa_skip + sex + (1 + tomoa_skip | full_name) + (1 + tomoa_skip | event), data = reg_times)
+
+times |> select(tomoa_skip, full_name, event, sex, best_time, age, time_progression) -> reg_dat
+reg_dat[complete.cases(reg_dat),] -> reg_dat
+
+# standardizing time progression?
+reg_dat <- reg_dat |>
+  mutate(
+    time_progression = scale(time_progression)
+  )
+
+m00 <- lmer(log(best_time) ~ (1 | full_name), data = reg_dat, REML = FALSE)
+m0 <- lmer(log(best_time) ~ (1 + tomoa_skip | full_name) + (1 + tomoa_skip | event), data = reg_dat, REML = FALSE)
+m1 <- lmer(log(best_time) ~ sex + (1 + tomoa_skip | full_name) + (1 + tomoa_skip | event), data = reg_dat, REML = FALSE)
+m2 <- lmer(log(best_time) ~ tomoa_skip + sex + time_progression + age + (1 + tomoa_skip | full_name) + (1 + tomoa_skip | event), data = reg_dat, REML = FALSE)
+m3 <- lmer(log(best_time) ~ tomoa_skip*age + sex + time_progression + (1 + tomoa_skip | full_name) + (1 + tomoa_skip | event), data = reg_dat, REML = FALSE)
+
+anova_results <- anova(m00, m0, m1, m2, m3)
+
+tidy_anova <- tidy(anova_results)[, c("term", "BIC", "statistic", "p.value")]
+models <- c("$\\mathcal{M}_{0}$", "$\\mathcal{M}_{1}$", "$\\mathcal{M}_{2}$", "$\\mathbf{\\mathcal{M}}_{3}$", "$\\mathcal{M}_{4}$")
+tidy_anova$term <- models
+
+tidy_anova |> 
+  kable(
+    booktabs = TRUE, 
+    escape = FALSE,
+    format = 'latex', 
+    align = "lcc", 
+    digits = 4, 
+    caption = "ANOVA table output of our model comparisons",  
+    col.names = c("Models", "BIC", "Statistic", "p-value")
+  ) |> 
+  kableExtra::row_spec(4, bold = TRUE)
+```
+
+```{r model-summary, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
+library(lme4)
+library(dplyr)
+library(lattice)
+library(tidyr)
+library(broom.mixed)
+library(ggplot2)
+library(performance)
+library(sjPlot)
+library(rstanarm)
+library(kableExtra)
+library(insight)
+
+mTimes_with_ages <- read.csv("../data/mTimesAges.csv")
+wTimes_with_ages <- read.csv("../data/wTimesAges.csv")
+
+# Add full name
+mTimes_with_ages$full_name <- paste(mTimes_with_ages$fname, mTimes_with_ages$lname, sep = " ")
+wTimes_with_ages$full_name <- paste(wTimes_with_ages$fname, wTimes_with_ages$lname, sep = " ")
+
+# Add best time column
+mTimes_with_ages <- mTimes_with_ages |>
+  mutate(best_time = pmin(final, semi, best_qual, first_round, quarter, small_final, big_final, na.rm = TRUE))
+
+wTimes_with_ages <- wTimes_with_ages |>
+  mutate(best_time = pmin(final, semi, best_qual, first_round, quarter, small_final, big_final, na.rm = TRUE))
+
+mTimes_with_ages |> mutate(sex = "m") |>
+  bind_rows(wTimes_with_ages |> mutate(sex = "w")) -> times
+
+times |> select(tomoa_skip, full_name, event, sex, best_time, age, time_progression) -> reg_times
+reg_times <- reg_times[complete.cases(reg_times), ]
+
+times |> select(tomoa_skip, full_name, event, sex, best_time, age, time_progression) -> reg_dat
+reg_dat[complete.cases(reg_dat),] -> reg_dat
+
+# standardizing time progression?
+reg_dat <- reg_dat |>
+  mutate(
+    time_progression = scale(time_progression)
+  )
+
+m2 <- lmer(log(best_time) ~ tomoa_skip + sex + time_progression + age + (1 + tomoa_skip | full_name) + (1 + tomoa_skip | event), data = reg_dat, REML = FALSE)
 
 #Fixed effect estimates
-fixed_ef_summary <- tidy(m6)
-selected_terms <- c("(Intercept)", "tomoa_skipTRUE", "sexw")
+fixed_ef_summary <- tidy(m2)
+selected_terms <- c("(Intercept)", "tomoa_skipTRUE", "sexw", "age", "time_progression")
 selected_columns <- c("term", "estimate")
 
 #Get fixed effect rows and cols
@@ -98,15 +181,15 @@ fixed_ef_summary <- fixed_ef_summary |>
   select(selected_columns)
 
 #get CIs for fixed effects
-CIs <- data.frame(confint(m6, method="Wald"))
-selected_rows <- CIs[c("(Intercept)", "tomoa_skipTRUE", "sexw"), ]
+CIs <- data.frame(confint(m2, method="Wald"))
+selected_rows <- CIs[c("(Intercept)", "tomoa_skipTRUE", "sexw", "time_progression", "age"), ]
 selected_rows$CI <- paste("(", round(selected_rows$`X2.5`, 4), ", ", round(selected_rows$`X97.5`, 4), ")", sep = "")
 selected_rows <- selected_rows |> select(-starts_with("X2.5"), -starts_with("X97.5"))
 fixed_ef_summary <- bind_cols(fixed_ef_summary, selected_rows)
-fixed_ef_summary$term <- c("$\\gamma_{00}$", "$\\gamma_{01}$", "$\\gamma_{02}$")
+fixed_ef_summary$term <- c("$\\gamma_{00}$", "$\\gamma_{01}$", "$\\gamma_{02}$", "$\\gamma_{03}$", "$\\gamma_{04}$")
 
 #get variance components
-var_comps <- get_variance(m6)
+var_comps <- get_variance(m2)
 
 rand_ef_summary <- data.frame(
   sigma_2 = round(var_comps$var.residual, 4),
@@ -133,10 +216,11 @@ combined_summary |>
     format = 'latex',
     align = "lcc",
     digits=4,
-    caption = "Summary of our mixed effect model's fixed and random effects", 
+    caption = "Summary of our chosen mixed effect model's ($\\mathcal{M}_3$) estimated fixed and random effects",
     col.names = c("Term", "Estimate", "95\\% CI")
     ) |>
-    pack_rows("Random Effects", 4, 10, bold=T, latex_gap_space = ".8em") |>
-    pack_rows("Fixed Effects", 1, 3, bold=T, latex_gap_space = ".8em")
+    # add_header_above(c(" ", "log(y)" = 2), bold=T) |>
+    pack_rows("Random Effects", 6, 12, bold=T, latex_gap_space = ".8em") |>
+    pack_rows("Fixed Effects", 1, 5, bold=T, latex_gap_space = ".8em")
 
 ```

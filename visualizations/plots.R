@@ -7,11 +7,11 @@ library(stringr)
 library(scales)
 
 # Load data
-m_times_update <- read.csv("data/mTimes_skip.csv")
-w_times_update <- read.csv("data/wTimes_skip.csv")
-m_times_update$start_date <- as.Date(m_times_update$start_date)
-w_times_update$start_date <- as.Date(w_times_update$start_date)
-w_times_update$sex <- "F"
+mTimes_skip <- read.csv("data/mTimes_skip.csv")
+wTimes_skip <- read.csv("data/wTimes_skip.csv")
+mTimes_skip$start_date <- as.Date(mTimes_skip$start_date)
+wTimes_skip$start_date <- as.Date(wTimes_skip$start_date)
+wTimes_skip$sex <- "F"
 events <- read.csv("data/events.csv")
 
 
@@ -19,8 +19,8 @@ events <- read.csv("data/events.csv")
 label_names <- c('F' = 'Womens', 'M' = 'Mens')
 custom_colors <- c("Tomoa Skip" = "#d95f02", "No Tomoa Skip" = "#7570b3")
 
-m_times_update |>
-  bind_rows(w_times_update) |>
+mTimes_skip |>
+  bind_rows(wTimes_skip) |>
   group_by(sex, start_date) |>
   filter(!is.na(tomoa_skip)) |>
   summarise(num_ts = sum(tomoa_skip), num_no_ts = sum(!tomoa_skip)) |>
@@ -53,8 +53,8 @@ events |>
 
 
 # Tomoa Skip Progression plot
-test_df <- m_times_update |>
-  bind_rows(w_times_update)
+test_df <- mTimes_skip |>
+  bind_rows(wTimes_skip)
 test_df$full_name <- paste(test_df$fname, test_df$lname, sep = " ")
 true_ts_df <- subset(test_df, tomoa_skip == TRUE)
 earliest_dates <- aggregate(start_date ~ full_name, data = true_ts_df, FUN = min)
@@ -79,10 +79,10 @@ test_df |>
 
 
 # Tomoa Skip ranges plot
-m_times_update$full_name <- paste(m_times_update$fname, m_times_update$lname, sep = " ")
-w_times_update$full_name <- paste(w_times_update$fname, w_times_update$lname, sep = " ")
-m_times_update |> mutate(sex = "m") |>
-  bind_rows(w_times_update |> mutate(sex = "w")) -> all_climbers 
+mTimes_skip$full_name <- paste(mTimes_skip$fname, mTimes_skip$lname, sep = " ")
+wTimes_skip$full_name <- paste(wTimes_skip$fname, wTimes_skip$lname, sep = " ")
+mTimes_skip |> mutate(sex = "m") |>
+  bind_rows(wTimes_skip |> mutate(sex = "w")) -> all_climbers 
 
 all_climbers <- all_climbers |>
   rowwise() |>
