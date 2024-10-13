@@ -6,74 +6,43 @@ library(broom.mixed)
 library(ggplot2)
 library(performance)
 library(sjPlot)
-library(rstanarm)
-library(foreach)
-library(parallel)
 
-
-## SETUP ##
-m_times_update <- read.csv("data/mTimes_skip.csv")
-w_times_update <- read.csv("data/wTimes_skip.csv")
+mTimes_with_ages <- read.csv("data/mTimesAges.csv")
+wTimes_with_ages <- read.csv("data/wTimesAges.csv")
 
 # Add full name
-m_times_update$full_name <- paste(m_times_update$fname, m_times_update$lname, sep = " ")
-w_times_update$full_name <- paste(w_times_update$fname, w_times_update$lname, sep = " ")
+mTimes_with_ages$full_name <- paste(mTimes_with_ages$fname, mTimes_with_ages$lname, sep = " ")
+wTimes_with_ages$full_name <- paste(wTimes_with_ages$fname, wTimes_with_ages$lname, sep = " ")
 
 # Add best time column
-m_times_update <- m_times_update |>
+mTimes_with_ages <- mTimes_with_ages |>
   mutate(best_time = pmin(final, semi, best_qual, first_round, quarter, small_final, big_final, na.rm = TRUE))
 
-w_times_update <- w_times_update |>
+wTimes_with_ages <- wTimes_with_ages |>
   mutate(best_time = pmin(final, semi, best_qual, first_round, quarter, small_final, big_final, na.rm = TRUE))
 
-m_times_update |> mutate(sex = "m") |>
-  bind_rows(w_times_update |> mutate(sex = "w")) -> times
+mTimes_with_ages |> mutate(sex = "m") |>
+  bind_rows(wTimes_with_ages |> mutate(sex = "w")) -> times
 
-times |> select(tomoa_skip, full_name, event, sex, best_time) -> reg_times
+times |> select(tomoa_skip, full_name, event, sex, best_time, age, time_progression) -> reg_times
 reg_times <- reg_times[complete.cases(reg_times), ]
 
-times |> select(sex, best_time, tomoa_skip, full_name, event) -> reg_dat
+times |> select(tomoa_skip, full_name, event, sex, best_time, age, time_progression) -> reg_dat
 reg_dat[complete.cases(reg_dat),] -> reg_dat
 
-times |>
-  mutate(log_best_time = log(best_time),
-         sqrt_best_time = sqrt(best_time)) |>
-  select(tomoa_skip, full_name, event, sex, log_best_time, sqrt_best_time) |> 
-  filter(!is.na(tomoa_skip)) |>
-  pivot_longer(cols = ends_with("best_time"), names_to = "transform", values_to = "best_time") |>
-  ggplot() +
-  geom_histogram(aes(best_time, fill = tomoa_skip), position = "dodge", binwidth = .1) +
-  facet_grid(sex ~ transform)
-
-MASS::boxcox(lm(best_time ~ 1, data = reg_dat)) ## lambda = -1 or -2 => transformation = 1/x or 1/x^2
-
-## no transformation
-times |>
-  filter(!is.na(tomoa_skip)) |>
-  ggplot() +
-  geom_histogram(aes(best_time, fill = tomoa_skip), position = "dodge", binwidth = .1) +
-  facet_grid(sex ~ .)
+reg_dat <- reg_dat |>
+  mutate(
+    time_progression = scale(time_progression)
+  )
 
 
-# Model
-model <- lmer(log(best_time) ~ tomoa_skip + sex + (1 + tomoa_skip | full_name) + (1 + tomoa_skip | event), data = reg_dat)
+m00 <- lmer(log(best_time) ~ (1 | full_name), data = reg_dat, REML = FALSE)
+m0 <- lmer(log(best_time) ~ (1 + tomoa_skip | full_name) + (1 + tomoa_skip | event), data = reg_dat, REML = FALSE)
+m1 <- lmer(log(best_time) ~ sex + (1 + tomoa_skip | full_name) + (1 + tomoa_skip | event), data = reg_dat, REML = FALSE)
+m2 <- lmer(log(best_time) ~ tomoa_skip + sex + time_progression + age + (1 + tomoa_skip | full_name) + (1 + tomoa_skip | event), data = reg_dat, REML = FALSE)
+m3 <- lmer(log(best_time) ~ tomoa_skip*age + sex + time_progression + (1 + tomoa_skip | full_name) + (1 + tomoa_skip | event), data = reg_dat, REML = FALSE)
 
-tidy(model)
-glance(model)
-tab_model(model)
-
-ggplot() +
-  geom_point(aes(fitted(model), resid(model)))
-
-qqnorm(resid(model))
-qqline(resid(model))
+anova(m00, m0, m1, m2, m3) |>
+  tidy()
 
 
-data.frame(true = reg_dat$best_time, fitted = exp(fitted(model))) |>
-  ggplot() +
-  geom_point(aes(true, fitted)) +
-  geom_abline(aes(intercept = 0, slope = 1), colour = "red")
-
-
-## MSE
-mean((reg_dat$best_time - exp(fitted(model)))^2)
